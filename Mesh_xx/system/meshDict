@@ -1,0 +1,100 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                |
+| \\      /  F ield         | cfMesh: A library for mesh generation          |
+|  \\    /   O peration     |                                                |
+|   \\  /    A nd           | Author: Franjo Juretic                         |
+|    \\/     M anipulation  | E-mail: franjo.juretic@c-fields.com            |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version   2.0;
+    format    ascii;
+    class     dictionary;
+    location  "system";
+    object    meshDict;
+}
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+surfaceFile "merge.fms";
+
+maxCellSize 1.8; //[m]
+//minCellSize 15; //[m]
+//boundaryCellSize 15; //[m]
+
+
+objectRefinements
+{
+	#include        "boxesDict";
+}
+
+localRefinement
+{
+    /*buildings
+    {
+        additionalRefinementLevels 5;
+//        refinementThickness  4; //[m]
+    }*/
+    terrain
+    {
+        additionalRefinementLevels 3;
+//        refinementThickness  1; //[m]
+    }
+    "zMin"
+    {
+        additionalRefinementLevels 3;
+//        refinementThickness  1; //[m]
+    }
+}
+
+/*boundaryLayers
+{
+    patchBoundaryLayers
+    {
+        terrain
+        {
+            nLayers                       3;
+//            maximumFirstLayerThickness 0.005; //[m]
+            thicknessRatio              1.1;
+            allowDiscontinuity            1;
+        }
+
+        buildings
+        {
+            nLayers                      4;
+//            maximumFirstLayerThickness 0.005; //[m]
+            thicknessRatio   1.2;
+            allowDiscontinuity           1;
+        }
+    }
+
+    optimiseLayer 1;
+
+    optimisationParameters
+    {
+        nSmoothNormals      5;
+        maxNumIterations    5;
+        featureSizeFactor 0.3;
+        reCalculateNormals  1;
+        relThicknessTol   0.1;
+    }
+}*/
+
+renameBoundary
+{
+//    defaultType     wall;
+
+    newPatchNames
+    {
+        buildings { newName buildings  ; type  wall; }
+        terrain   { newName terrain    ; type  wall; }
+	"xMax"    { newName outlet     ; type  patch; }
+        "xMin"    { newName inlet      ; type  patch; }
+        "yMax"    { newName outlet     ; type  patch; }
+        "yMin"    { newName inlet      ; type  patch; }
+        "zMax"    { newName sides      ; type  slip; }
+        "zMin"    { newName ground     ; type  wall; }
+    }
+}
+
+// ************************************************************************* //

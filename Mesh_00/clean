@@ -1,0 +1,12 @@
+#!/bin/bash
+
+#------------------------------------------------------------------------------
+cd ${0%/*} || exit 1
+
+#------------------------------------------------------------------------------
+rm -rf constant
+rm -rf buildingBox.stl buildings.fms terrain.fms merge.fms
+rm -rf log.cartesianMesh log.renumberMesh log.checkMesh log.improveMeshQuality
+rm -rf boundBox.stl
+
+#------------------------------------------------------------------------------

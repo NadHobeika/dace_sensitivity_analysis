@@ -1,0 +1,27 @@
+#!/bin/bash
+#
+#----------------------------------------------#
+# Contributor: Tobias Holzmann                 #
+# Last Change: October 2016                    #
+# Topic:       DAKOTA coupling with OpenFOAM   #
+# Email:       Tobias.Holzmann@Holzmann-cfd.de #
+# Location:    www.Holzmann-cfd.de             #
+#----------------------------------------------#
+
+
+#------------------------------------------------------------------------------
+cd ${0%/*} || exit 1
+clear
+
+
+#------------------------------------------------------------------------------
+foamCleanTutorials
+rm -rf constant/triSurface/*.eMesh optimizationLog Log analyse*
+rm -rf log* constant/extend* dakotaLog dakotaData* dakota.rst constant/poly*
+rm -rf constant/triSurface/bldg_Model_00_run_00.stl system/dakotaParameters
+rm -rf system/parametricGeometry Uaverage constant/triS*/baffles2.stl
+rm -rf results S4 *.out constant/triSurface/bldg_Model_00_run_00.stl .dakotaInput*
+rm -rf cons*/triSu*/terrain_Model_00_run_00.stl system/dakotaParameter .optimization*
+rm -rf params* results.out*
+
+#------------------------------------------------------------------------------

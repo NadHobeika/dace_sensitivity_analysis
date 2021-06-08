@@ -1,0 +1,66 @@
+# Dakota Input File
+#
+# Tobias Holzmann
+# Three design variable:
+#   angle1 (baffle orientation close to outlet)
+#   angle2 (baffle orientation close to the inlets)
+#   length (size of the inlet length)
+#
+# A hybrid sampling method is used to check out different results for
+# different design quantities. An optimization is not done here but can
+# be added simply by change the method.
+#
+# The method that is used it the Latin Hypercube Sampling (LHS)
+#-----------------------------------------------------------------------------
+
+
+environment
+    error_file 'dakotaError'
+    output_precision 4
+    tabular_graphics_data
+        tabular_graphics_file = 'dakotaData.dat'
+
+
+method
+    dace
+        oa_lhs
+	main_effects
+        samples     = 40
+        seed        = 124523
+
+
+model
+    single
+
+
+variables
+    continuous_design = 3
+        descriptors   = 'alpha'    'beta'    'distance_dunes'
+        initial_point =    0           0           1
+        lower_bounds  =    0           0           1
+        upper_bounds  =   90          90          10
+
+
+interface
+    fork
+	analysis_driver = 'dakota_dunes.sh'
+	asynchronous
+		evaluation_concurrency = 2
+		local_evaluation_scheduling static
+        parameters_file = 'params.in'
+        results_file    = 'results.out'
+	file_tag
+	file_save
+	work_directory named 'workdir'
+	directory_tag directory_save
+	link_files '.optimizationLoop'
+	copy_files 'system' 'templatedir' 'constant' '0' 'Mesh_00' 'Mesh_90' 'Mesh_xx' 'getTransportRate.py' 'Residuals.txt'
+
+
+responses
+    objective_functions = 1
+        descriptors     = 'Uaverage'
+    no_hessians
+    no_gradients
+
+#-----------------------------------------------------------------------------

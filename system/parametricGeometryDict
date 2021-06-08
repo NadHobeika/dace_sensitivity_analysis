@@ -1,0 +1,185 @@
+#!/bin/bash
+#
+#-----------------------------------------------------------------------------
+
+
+# This is for testing purposes - delete at the end
+#-----------------------------------------------------------------------------
+#alpha=30
+#beta=55
+#distance_dunes=10
+
+
+if (( $(echo "alpha <= 70" |bc -l) ));
+then
+  # Rotate houses
+  #-----------------------------------------------------------------------------
+  surfaceTransformPoints -yawPitchRoll "(alpha 0 0)" \
+      constant/triSurface/house0.stl temp0.stl
+
+  surfaceTransformPoints -yawPitchRoll "(alpha 0 0)" \
+      constant/triSurface/house1.stl temp1.stl
+
+  surfaceTransformPoints -yawPitchRoll "(alpha 0 0)" \
+      constant/triSurface/house2.stl temp2.stl
+
+  surfaceTransformPoints -yawPitchRoll "(alpha 0 0)" \
+      constant/triSurface/house3.stl temp3.stl
+
+  surfaceTransformPoints -yawPitchRoll "(alpha 0 0)" \
+      constant/triSurface/house4.stl temp4.stl
+
+
+  # First translation
+  #-----------------------------------------------------------------------------
+  working_directory=($PWD)
+  x_y_translate=$(python3 $working_directory/system/parametricGeometryHelp.py alpha)
+  set $x_y_translate
+  x_translate_1=$1
+  y_translate_1=$2
+  x_translate_2=$3
+  y_translate_2=$4
+  x_translate_3=$5
+  y_translate_3=$6
+  x_translate_4=$7
+  y_translate_4=$8
+
+  surfaceTransformPoints -translate "($x_translate_1 $y_translate_1 0)" \
+      temp1.stl temp1.stl
+
+  surfaceTransformPoints -translate "($x_translate_2 $y_translate_2 0)" \
+      temp2.stl temp2.stl
+
+  surfaceTransformPoints -translate "($x_translate_3 $y_translate_3 0)" \
+      temp3.stl temp3.stl
+
+  surfaceTransformPoints -translate "($x_translate_4 $y_translate_4 0)" \
+      temp4.stl temp4.stl
+
+else
+  # Rotate first house
+  #-----------------------------------------------------------------------------
+  surfaceTransformPoints -yawPitchRoll "(alpha 0 0)" \
+      constant/triSurface/house0.stl temp0.stl
+
+
+  # create rest of houses
+  #-----------------------------------------------------------------------------
+  # total distance = 10 = 7 + 3 = bldgs + space
+  y1=`echo "10/s((alpha)*3.14/180)" | bc -l`
+  y2=`echo "2*$y1" | bc -l`
+  y3=`echo "3*$y1" | bc -l`
+  y4=`echo "4*$y1" | bc -l`
+  surfaceTransformPoints -translate "(0 $y1 0)" \
+      temp0.stl temp1.stl
+
+  surfaceTransformPoints -translate "(0 $y2 0)" \
+      temp0.stl temp2.stl
+
+  surfaceTransformPoints -translate "(0 $y3 0)" \
+      temp0.stl temp3.stl
+
+  surfaceTransformPoints -translate "(0 $y4 0)" \
+      temp0.stl temp4.stl
+fi
+
+
+# Merge stl files
+#-----------------------------------------------------------------------------
+#surfaceAdd temp0.stl temp1.stl merged_temp_0.stl
+#surfaceAdd temp2.stl merged_temp_0.stl merged_temp_1.stl
+#surfaceAdd temp3.stl merged_temp_1.stl merged_temp_2.stl
+#surfaceAdd temp4.stl merged_temp_2.stl merged_houses.stl
+cat temp0.stl temp1.stl temp2.stl temp3.stl temp4.stl >> merged_houses.stl
+
+
+# Rotate configuration by scaled beta
+#-----------------------------------------------------------------------------
+working_directory=($PWD)
+rot_angles=($(python3 $working_directory/system/scaleBeta.py temp0.stl temp4.stl alpha beta distance_dunes))
+r_angle_0=${rot_angles[1]}
+r_angle_1=${rot_angles[2]}
+surfaceTransformPoints -yawPitchRoll "($r_angle_0 0 0)" \
+    merged_houses.stl merged_houses.stl
+surfaceTransformPoints -yawPitchRoll "($r_angle_1 0 0)" \
+    merged_houses.stl merged_houses.stl
+
+
+# Remove not needed files
+#-----------------------------------------------------------------------------
+#rm -f temp0.stl
+#rm -f temp1.stl
+#rm -f temp2.stl
+#rm -f temp3.stl
+#rm -f temp4.stl
+
+
+# get x_min, y_min, x_total from bounding box
+#-----------------------------------------------------------------------------
+working_directory=($PWD)
+bbox=($(python3 $working_directory/system/boundingBoxStl.py merged_houses.stl))
+x_min_neg=${bbox[0]}
+y_min_neg=${bbox[1]}
+x_total=${bbox[2]}
+
+
+# Translate houses back to origin
+#-----------------------------------------------------------------------------
+#surfaceTransformPoints -translate "($x_min_neg $y_min_neg 0)" \
+#    merged_houses.stl constant/triSurface/bldg_Model_00_run_00.stl
+surfaceTransformPoints -translate "($x_min_neg $y_min_neg 0)" \
+    merged_houses.stl merged_houses.stl
+
+# Translate terrain to back of configuration
+#-----------------------------------------------------------------------------
+surfaceTransformPoints -translate "($x_total 0 0)" \
+    constant/triSurface/terrain.stl terrain.stl
+
+
+# Translate terrain distance
+#-----------------------------------------------------------------------------
+surfaceTransformPoints -translate "(distance_dunes 0 0)" \
+    terrain.stl terrain.stl
+
+
+# Create refinement boxes file for cfMesh
+#-----------------------------------------------------------------------------
+python3 $working_directory/system/refinementBoxes.py wind $x_total distance_dunes merged_houses.stl
+mv boxesDict Mesh/system/.
+
+# Remove not needed files
+#-----------------------------------------------------------------------------
+rm -f temp0.stl
+rm -f temp1.stl
+rm -f temp2.stl
+rm -f temp3.stl
+rm -f temp4.stl
+
+
+# Translate sample points with terrain
+#-----------------------------------------------------------------------------
+line1=$working_directory/system/line1.txt
+line2=$working_directory/system/line2.txt
+line3=$working_directory/system/line3.txt
+out1=$working_directory/system/line1
+out2=$working_directory/system/line2
+out3=$working_directory/system/line3
+python3 $working_directory/system/moveSamplePoints.py $x_total distance_dunes $line1 $out1
+python3 $working_directory/system/moveSamplePoints.py $x_total distance_dunes $line2 $out2
+python3 $working_directory/system/moveSamplePoints.py $x_total distance_dunes $line3 $out3
+
+
+# Combine files for cfMesh
+#-----------------------------------------------------------------------------
+cat merged_houses.stl terrain.stl >> merge.stl
+
+
+# Move files back to triSurface or remove not needed files
+#-----------------------------------------------------------------------------
+mv merge.stl constant/triSurface/merge.stl
+mv refinement_box.stl constant/triSurface/refinement_box.stl
+rm -f merged_houses.stl
+rm -f terrain.stl
+
+
+#-----------------------------------------------------------------------------
